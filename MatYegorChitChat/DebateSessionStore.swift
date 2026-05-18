@@ -8,9 +8,13 @@ private struct LegacyDebateSessionSnapshot: Codable {
     var messages: [ChatMessage]
 }
 
-struct DebateWorkspaceSnapshot: Codable {
+private struct LegacyDebateWorkspaceSnapshot: Codable {
     var rooms: [DebateRoom]
     var selectedRoomID: UUID?
+}
+
+struct DebateSessionSnapshot: Codable {
+    var session: DebateRoom
 }
 
 struct DebateSessionStore {
@@ -21,19 +25,31 @@ struct DebateSessionStore {
         self.defaults = defaults
     }
 
-    func loadWorkspace() -> DebateWorkspaceSnapshot? {
+    func loadSession() -> DebateRoom? {
         guard let data = defaults.data(forKey: storageKey) else {
             return nil
         }
 
         do {
-            return try JSONDecoder().decode(DebateWorkspaceSnapshot.self, from: data)
+            return try JSONDecoder().decode(DebateSessionSnapshot.self, from: data).session
         } catch {
+            do {
+                let workspace = try JSONDecoder().decode(LegacyDebateWorkspaceSnapshot.self, from: data)
+                if let selectedID = workspace.selectedRoomID,
+                   let selectedRoom = workspace.rooms.first(where: { $0.id == selectedID }) {
+                    return selectedRoom
+                }
+                if let firstRoom = workspace.rooms.first {
+                    return firstRoom
+                }
+            } catch {
+            }
+
             do {
                 let legacy = try JSONDecoder().decode(LegacyDebateSessionSnapshot.self, from: data)
                 let now = Date()
-                let room = DebateRoom(
-                    title: "Main Arena",
+                return DebateRoom(
+                    title: "Main Debate",
                     topic: legacy.topic,
                     currentSpeaker: legacy.currentSpeaker,
                     yegorName: legacy.yegorName,
@@ -42,7 +58,6 @@ struct DebateSessionStore {
                     createdAt: now,
                     updatedAt: now
                 )
-                return DebateWorkspaceSnapshot(rooms: [room], selectedRoomID: room.id)
             } catch {
                 defaults.removeObject(forKey: storageKey)
                 return nil
@@ -50,12 +65,12 @@ struct DebateSessionStore {
         }
     }
 
-    func saveWorkspace(_ snapshot: DebateWorkspaceSnapshot) {
+    func saveSession(_ session: DebateRoom) {
         do {
-            let data = try JSONEncoder().encode(snapshot)
+            let data = try JSONEncoder().encode(DebateSessionSnapshot(session: session))
             defaults.set(data, forKey: storageKey)
         } catch {
-            assertionFailure("Failed to save debate workspace: \(error)")
+            assertionFailure("Failed to save debate session: \(error)")
         }
     }
 }

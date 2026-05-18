@@ -1,4 +1,4 @@
-d # ChitChat
+# ChitChat
 
 `ChitChat` is a simple macOS desktop app for two friends to chat, debate, throw around ridiculous ideas, and land on the best one without turning the room into a political talk show.
 
@@ -6,17 +6,17 @@ Built with SwiftUI, the current version is intentionally small, local-first, and
 
 ## Current MVP
 
-- Multiple local debate rooms with separate topics and history
+- One shared local debate thread for two people
 - Turn-based chatting with a clear active speaker
 - Editable display names for both participants
 - Local conversation history that survives app relaunches
-- One pinned “best idea” per room
-- Export the current room to a plain text transcript
+- One pinned “best idea” for the current conversation
+- Export the conversation to a plain text transcript
 - Quick prompt chips to kick off funny debates and idea battles
-- A polished desktop-style SwiftUI layout with a sidebar and room workspace
+- A polished desktop-style SwiftUI layout focused on a single conversation
 - A playful tone with dark-ish humor in the UI copy
 - A lightweight anti-politics guardrail for the shared space
-- Simple architecture that is ready for persistence, rooms, and future upgrades
+- Simple architecture that is ready for future upgrades if you ever want more structure later
 
 ## Screenshots
 
@@ -32,10 +32,10 @@ When you are ready, save app images in `docs/images/` and link them here. A good
 - `MatYegorChitChat/ContentView.swift` — main desktop chat/debate interface
 - `MatYegorChitChat/Participant.swift` — participant metadata like name, icon, and accent color
 - `MatYegorChitChat/ChatMessage.swift` — shared message model
-- `MatYegorChitChat/DebateRoom.swift` — room model with topic, names, messages, and pinned idea
-- `MatYegorChitChat/DebateViewModel.swift` — workspace state, prompts, room switching, pinning, and content rules
-- `MatYegorChitChat/DebateSessionStore.swift` — local workspace persistence using `UserDefaults`
-- `MatYegorChitChat/ChatExportService.swift` — plain text export for the selected room
+- `MatYegorChitChat/DebateRoom.swift` — the persisted conversation/session model
+- `MatYegorChitChat/DebateViewModel.swift` — conversation state, prompts, pinning, export, and content rules
+- `MatYegorChitChat/DebateSessionStore.swift` — local conversation persistence using `UserDefaults`
+- `MatYegorChitChat/ChatExportService.swift` — plain text export for the conversation transcript
 - `MatYegorChitChat/AppTheme.swift` — reusable colors and styling tokens
 - `MatYegorChitChat/Assets.xcassets` — app icons and accent assets
 
@@ -78,7 +78,7 @@ For the full branch workflow and example commands, see [`CONTRIBUTING.md`](CONTR
 
 ## Good Next Steps
 
-- Add delete/archive for old rooms
-- Export all rooms in one bundle or markdown file
+- Add simple message search
+- Add optional conversation archive/history snapshots
 - Add richer pinned idea summaries
 - Add real screenshots and a polished app icon

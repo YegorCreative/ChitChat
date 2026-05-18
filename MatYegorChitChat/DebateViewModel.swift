@@ -3,8 +3,7 @@ import Combine
 
 final class DebateViewModel: ObservableObject {
     @Published var draft = ""
-    @Published private(set) var rooms: [DebateRoom]
-    @Published var selectedRoomID: UUID
+    @Published private(set) var session: DebateRoom
     @Published var exportFeedback = ""
 
     let quickPrompts = [
@@ -22,28 +21,24 @@ final class DebateViewModel: ObservableObject {
     private let sessionStore: DebateSessionStore
     private let exportService: ChatExportService
 
-    var selectedRoom: DebateRoom? {
-        rooms.first(where: { $0.id == selectedRoomID })
+    var messages: [ChatMessage] {
+        session.messages
     }
 
-    var selectedMessages: [ChatMessage] {
-        selectedRoom?.messages ?? []
+    var topic: String {
+        session.topic
     }
 
     var currentSpeaker: Participant {
-        selectedRoom?.currentSpeaker ?? .yegor
+        session.currentSpeaker
     }
 
     var pinnedMessage: ChatMessage? {
-        selectedRoom?.pinnedMessage
-    }
-
-    var roomCountLabel: String {
-        "\(rooms.count) rooms live"
+        session.pinnedMessage
     }
 
     var messageCountLabel: String {
-        "\(selectedMessages.filter { !$0.isSystemMessage }.count) hot takes logged"
+        "\(messages.filter { !$0.isSystemMessage }.count) hot takes logged"
     }
 
     init(
@@ -53,79 +48,31 @@ final class DebateViewModel: ObservableObject {
         self.sessionStore = sessionStore
         self.exportService = exportService
 
-        let snapshot = sessionStore.loadWorkspace() ?? Self.defaultWorkspace()
-        let safeRooms = snapshot.rooms.isEmpty ? Self.defaultWorkspace().rooms : snapshot.rooms
-        rooms = safeRooms
-        selectedRoomID = snapshot.selectedRoomID ?? safeRooms.first?.id ?? safeRooms[0].id
-
-        if rooms.contains(where: { $0.id == selectedRoomID }) == false, let firstRoom = rooms.first {
-            selectedRoomID = firstRoom.id
-        }
-
-        saveWorkspace()
+        session = sessionStore.loadSession() ?? Self.defaultSession()
+        saveSession()
     }
 
-    func selectRoom(id: UUID) {
-        guard rooms.contains(where: { $0.id == id }) else { return }
-        selectedRoomID = id
-        exportFeedback = ""
-        saveWorkspace()
-    }
-
-    func createRoom() {
-        let roomNumber = rooms.count + 1
-        let room = Self.makeRoom(
-            title: "Idea Arena \(roomNumber)",
-            topic: quickPrompts[(roomNumber - 1) % quickPrompts.count]
-        )
-        rooms.insert(room, at: 0)
-        selectedRoomID = room.id
-        draft = ""
-        exportFeedback = "Fresh room created. Time to invent irresponsibly."
-        saveWorkspace()
-    }
-
-    func updateSelectedRoomTitle(_ title: String) {
-        updateSelectedRoom { room in
-            room.title = sanitizedText(title, fallback: "Idea Arena", maxLength: 40)
-        }
-    }
-
-    func updateSelectedTopic(_ topic: String) {
-        updateSelectedRoom { room in
-            room.topic = sanitizedText(topic, fallback: Self.defaultTopic, maxLength: 100)
+    func updateTopic(_ topic: String) {
+        updateSession { session in
+            session.topic = sanitizedText(topic, fallback: Self.defaultTopic, maxLength: 100)
         }
     }
 
     func name(for participant: Participant) -> String {
-        guard let selectedRoom else { return participant.displayName }
-        return selectedRoom.name(for: participant)
-    }
-
-    func name(for participant: Participant, in room: DebateRoom) -> String {
-        room.name(for: participant)
+        session.name(for: participant)
     }
 
     func setName(_ name: String, for participant: Participant) {
-        updateSelectedRoom { room in
+        updateSession { session in
             let cleanedName = sanitizedText(name, fallback: participant.displayName, maxLength: 20)
 
             switch participant {
             case .yegor:
-                room.yegorName = cleanedName
+                session.yegorName = cleanedName
             case .friend:
-                room.friendName = cleanedName
+                session.friendName = cleanedName
             }
         }
-    }
-
-    func subtitle(for room: DebateRoom) -> String {
-        room.topic
-    }
-
-    func roomMeta(for room: DebateRoom) -> String {
-        let pinFlag = room.pinnedMessage == nil ? "" : " • pinned"
-        return "\(room.debateCountText)\(pinFlag)"
     }
 
     func sendMessage() {
@@ -138,15 +85,15 @@ final class DebateViewModel: ObservableObject {
             return
         }
 
-        updateSelectedRoom { room in
-            room.messages.append(
+        updateSession { session in
+            session.messages.append(
                 ChatMessage(
-                    author: room.currentSpeaker,
+                    author: session.currentSpeaker,
                     text: trimmed,
                     timestamp: .now
                 )
             )
-            room.currentSpeaker = room.currentSpeaker.opponent
+            session.currentSpeaker = session.currentSpeaker.opponent
         }
         draft = ""
     }
@@ -156,38 +103,36 @@ final class DebateViewModel: ObservableObject {
     }
 
     func switchSpeaker() {
-        updateSelectedRoom { room in
-            room.currentSpeaker = room.currentSpeaker.opponent
+        updateSession { session in
+            session.currentSpeaker = session.currentSpeaker.opponent
         }
     }
 
     func togglePinned(message: ChatMessage) {
         guard !message.isSystemMessage else { return }
-        updateSelectedRoom { room in
-            room.pinnedMessageID = room.pinnedMessageID == message.id ? nil : message.id
+        updateSession { session in
+            session.pinnedMessageID = session.pinnedMessageID == message.id ? nil : message.id
         }
     }
 
     func resetConversation() {
         draft = ""
-        updateSelectedRoom { room in
-            room.currentSpeaker = .yegor
-            room.messages = [
+        updateSession { session in
+            session.currentSpeaker = .yegor
+            session.messages = [
                 ChatMessage(
                     author: nil,
-                    text: "Fresh round started in \(room.title). The idea graveyard is full, so please invent responsibly.",
+                    text: "Fresh round started. The idea graveyard is full, so please invent responsibly.",
                     timestamp: .now
                 )
             ]
-            room.pinnedMessageID = nil
+            session.pinnedMessageID = nil
         }
     }
 
-    func exportSelectedRoom() {
-        guard let selectedRoom else { return }
-
+    func exportConversation() {
         do {
-            if let url = try exportService.export(room: selectedRoom) {
+            if let url = try exportService.export(session: session) {
                 exportFeedback = "Exported \(url.lastPathComponent)"
             } else {
                 exportFeedback = "Export cancelled. The words remain safely trapped here."
@@ -203,8 +148,8 @@ final class DebateViewModel: ObservableObject {
     }
 
     private func appendSystemMessage(_ text: String) {
-        updateSelectedRoom { room in
-            room.messages.append(
+        updateSession { session in
+            session.messages.append(
                 ChatMessage(
                     author: nil,
                     text: text,
@@ -214,11 +159,10 @@ final class DebateViewModel: ObservableObject {
         }
     }
 
-    private func updateSelectedRoom(_ mutation: (inout DebateRoom) -> Void) {
-        guard let index = rooms.firstIndex(where: { $0.id == selectedRoomID }) else { return }
-        mutation(&rooms[index])
-        rooms[index].updatedAt = .now
-        saveWorkspace()
+    private func updateSession(_ mutation: (inout DebateRoom) -> Void) {
+        mutation(&session)
+        session.updatedAt = .now
+        saveSession()
     }
 
     private func sanitizedText(_ value: String, fallback: String, maxLength: Int) -> String {
@@ -227,25 +171,15 @@ final class DebateViewModel: ObservableObject {
         return capped.isEmpty ? fallback : capped
     }
 
-    private func saveWorkspace() {
-        sessionStore.saveWorkspace(
-            DebateWorkspaceSnapshot(
-                rooms: rooms,
-                selectedRoomID: selectedRoomID
-            )
-        )
+    private func saveSession() {
+        sessionStore.saveSession(session)
     }
 
-    private static func defaultWorkspace() -> DebateWorkspaceSnapshot {
-        let room = makeRoom(title: "Main Arena", topic: defaultTopic)
-        return DebateWorkspaceSnapshot(rooms: [room], selectedRoomID: room.id)
-    }
-
-    private static func makeRoom(title: String, topic: String) -> DebateRoom {
+    private static func defaultSession() -> DebateRoom {
         let now = Date()
         return DebateRoom(
-            title: title,
-            topic: topic,
+            title: "Main Debate",
+            topic: defaultTopic,
             currentSpeaker: .yegor,
             yegorName: Participant.yegor.displayName,
             friendName: Participant.friend.displayName,

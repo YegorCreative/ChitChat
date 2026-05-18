@@ -3,33 +3,33 @@ import Foundation
 import UniformTypeIdentifiers
 
 struct ChatExportService {
-    func export(room: DebateRoom) throws -> URL? {
+    func export(session: DebateRoom) throws -> URL? {
         let panel = NSSavePanel()
-        panel.title = "Export Debate"
-        panel.message = "Save this room as a plain text transcript."
+        panel.title = "Export Conversation"
+        panel.message = "Save this debate as a plain text transcript."
         panel.allowedContentTypes = [.plainText]
         panel.canCreateDirectories = true
-        panel.nameFieldStringValue = suggestedFileName(for: room)
+        panel.nameFieldStringValue = suggestedFileName(for: session)
 
         guard panel.runModal() == .OK, let url = panel.url else {
             return nil
         }
 
-        try formattedTranscript(for: room).write(to: url, atomically: true, encoding: .utf8)
+        try formattedTranscript(for: session).write(to: url, atomically: true, encoding: .utf8)
         return url
     }
 
-    func formattedTranscript(for room: DebateRoom) -> String {
+    func formattedTranscript(for session: DebateRoom) -> String {
         var lines = [String]()
         lines.append("ChitChat Export")
-        lines.append("Room: \(room.title)")
-        lines.append("Topic: \(room.topic)")
-        lines.append("Participants: \(room.yegorName) vs \(room.friendName)")
-        lines.append("Created: \(Self.longDateFormatter.string(from: room.createdAt))")
-        lines.append("Last updated: \(Self.longDateFormatter.string(from: room.updatedAt))")
+        lines.append("Conversation: \(session.title)")
+        lines.append("Topic: \(session.topic)")
+        lines.append("Participants: \(session.yegorName) vs \(session.friendName)")
+        lines.append("Created: \(Self.longDateFormatter.string(from: session.createdAt))")
+        lines.append("Last updated: \(Self.longDateFormatter.string(from: session.updatedAt))")
 
-        if let pinnedMessage = room.pinnedMessage, let author = pinnedMessage.author {
-            lines.append("Pinned idea: \(room.name(for: author)) — \(pinnedMessage.text)")
+        if let pinnedMessage = session.pinnedMessage, let author = pinnedMessage.author {
+            lines.append("Pinned idea: \(session.name(for: author)) — \(pinnedMessage.text)")
         } else {
             lines.append("Pinned idea: none")
         }
@@ -38,11 +38,11 @@ struct ChatExportService {
         lines.append("Transcript")
         lines.append(String(repeating: "=", count: 48))
 
-        for message in room.messages {
+        for message in session.messages {
             let timestamp = Self.shortDateFormatter.string(from: message.timestamp)
             if let author = message.author {
-                let pinnedSuffix = room.pinnedMessageID == message.id ? " [PINNED]" : ""
-                lines.append("[\(timestamp)] \(room.name(for: author)):\(pinnedSuffix) \(message.text)")
+                let pinnedSuffix = session.pinnedMessageID == message.id ? " [PINNED]" : ""
+                lines.append("[\(timestamp)] \(session.name(for: author)):\(pinnedSuffix) \(message.text)")
             } else {
                 lines.append("[\(timestamp)] System: \(message.text)")
             }
@@ -53,8 +53,9 @@ struct ChatExportService {
         return lines.joined(separator: "\n")
     }
 
-    private func suggestedFileName(for room: DebateRoom) -> String {
-        let safeTitle = room.title
+    private func suggestedFileName(for session: DebateRoom) -> String {
+        let source = session.topic.isEmpty ? session.title : session.topic
+        let safeTitle = source
             .lowercased()
             .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))

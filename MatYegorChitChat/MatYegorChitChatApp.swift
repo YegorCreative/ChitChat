@@ -13,7 +13,7 @@ struct MatYegorChitChatApp: App {
         WindowGroup {
             ContentView()
         }
-        .defaultSize(width: 1320, height: 820)
+        .defaultSize(width: 1180, height: 820)
         .windowResizability(.contentMinSize)
     }
 }

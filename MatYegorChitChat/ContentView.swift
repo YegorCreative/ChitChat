@@ -15,95 +15,9 @@ struct ContentView: View {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            HStack(spacing: 20) {
-                sidebar
-                    .frame(width: 290)
-
-                mainPanel
-            }
-            .padding(20)
-        }
-        .frame(minWidth: 1240, minHeight: 780)
-    }
-
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(AppTheme.gold.opacity(0.18))
-                        .frame(width: 54, height: 54)
-
-                    Image(systemName: AppTheme.appSymbol)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(AppTheme.gold)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("ChitChat")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppTheme.strongText)
-
-                    Text("Rooms for arguments, breakthroughs, and mildly unhinged brilliance.")
-                        .font(.footnote)
-                        .foregroundStyle(AppTheme.subtleText)
-                }
-            }
-
-            HStack(spacing: 10) {
-                CapsuleTag(title: "Rooms", value: viewModel.roomCountLabel, tint: .purple)
-                CapsuleTag(title: "Status", value: viewModel.messageCountLabel, tint: .mint)
-            }
-
-            Button {
-                viewModel.createRoom()
-            } label: {
-                Label("New Room", systemImage: "plus.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.purple)
-
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(viewModel.rooms) { room in
-                        RoomCard(
-                            room: room,
-                            isSelected: room.id == viewModel.selectedRoomID,
-                            subtitle: viewModel.subtitle(for: room),
-                            meta: viewModel.roomMeta(for: room)
-                        ) {
-                            viewModel.selectRoom(id: room.id)
-                        }
-                    }
-                }
-            }
-
-            Spacer()
-
-            Text("Everything saves locally, exports cleanly, and keeps politics out in the hallway.")
-                .font(.caption)
-                .foregroundStyle(AppTheme.subtleText)
-                .padding(14)
-                .background(AppTheme.secondaryFill, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(AppTheme.sidebarGradient)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(AppTheme.border, lineWidth: 1)
-        )
-    }
-
-    @ViewBuilder
-    private var mainPanel: some View {
-        if let room = viewModel.selectedRoom {
-            VStack(spacing: 16) {
-                roomHeader(room)
-                speakerPanel(room)
+            VStack(spacing: 18) {
+                header
+                speakerPanel
 
                 if let pinnedMessage = viewModel.pinnedMessage {
                     PinnedIdeaCard(
@@ -119,27 +33,33 @@ struct ContentView: View {
                 transcriptPanel
                 composerPanel
             }
-        } else {
-            Text("No room selected. The chaos has escaped containment.")
-                .foregroundStyle(.white)
+            .padding(20)
         }
+        .frame(minWidth: 1100, minHeight: 780)
     }
 
-    private func roomHeader(_ room: DebateRoom) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 12) {
-                    TextField("Room title", text: selectedRoomTitleBinding)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .textFieldStyle(.plain)
-                        .foregroundStyle(AppTheme.strongText)
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.gold.opacity(0.18))
+                            .frame(width: 56, height: 56)
 
-                    TextField("Room topic", text: selectedTopicBinding)
-                        .textFieldStyle(.roundedBorder)
+                        Image(systemName: AppTheme.appSymbol)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(AppTheme.gold)
+                    }
 
-                    HStack(spacing: 10) {
-                        CapsuleTag(title: "Topic", value: room.topic, tint: .orange)
-                        CapsuleTag(title: "Pinned", value: room.pinnedMessage == nil ? "none yet" : "best idea armed", tint: .yellow)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("ChitChat")
+                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppTheme.strongText)
+
+                        Text("One shared thread for you and your friend to argue brilliantly, pin the best idea, and keep the history alive.")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.subtleText)
                     }
                 }
 
@@ -148,7 +68,7 @@ struct ContentView: View {
                 VStack(alignment: .trailing, spacing: 10) {
                     HStack(spacing: 10) {
                         Button {
-                            viewModel.exportSelectedRoom()
+                            viewModel.exportConversation()
                         } label: {
                             Label("Export .txt", systemImage: "square.and.arrow.up")
                         }
@@ -163,23 +83,32 @@ struct ContentView: View {
                         .tint(.red)
                     }
 
-                    Text(viewModel.exportFeedback.isEmpty ? "Export this room or pin the smartest take." : viewModel.exportFeedback)
+                    Text(viewModel.exportFeedback.isEmpty ? "Saved locally on this Mac." : viewModel.exportFeedback)
                         .font(.caption)
                         .foregroundStyle(AppTheme.subtleText)
                 }
+            }
+
+            TextField("Debate topic", text: topicBinding)
+                .textFieldStyle(.roundedBorder)
+
+            HStack(spacing: 10) {
+                CapsuleTag(title: "Topic", value: viewModel.topic, tint: .orange)
+                CapsuleTag(title: "Status", value: viewModel.messageCountLabel, tint: .mint)
+                CapsuleTag(title: "Pinned", value: viewModel.pinnedMessage == nil ? "none yet" : "best idea armed", tint: .yellow)
             }
         }
         .padding(20)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
-    private func speakerPanel(_ room: DebateRoom) -> some View {
+    private var speakerPanel: some View {
         HStack(spacing: 16) {
             ForEach(Participant.allCases) { participant in
                 SpeakerCard(
                     participant: participant,
                     displayName: nameBinding(for: participant),
-                    isActive: participant == room.currentSpeaker
+                    isActive: participant == viewModel.currentSpeaker
                 )
             }
         }
@@ -194,7 +123,7 @@ struct ContentView: View {
 
                 Spacer()
 
-                Text("Use a room for one idea cluster, then open another when the genius gets crowded.")
+                Text("One thread, two humans, infinite confidence.")
                     .font(.caption)
                     .foregroundStyle(AppTheme.subtleText)
             }
@@ -230,7 +159,7 @@ struct ContentView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 14) {
-                    ForEach(viewModel.selectedMessages) { message in
+                    ForEach(viewModel.messages) { message in
                         MessageBubble(
                             message: message,
                             displayName: message.author.map(viewModel.name(for:)) ?? "System",
@@ -252,10 +181,7 @@ struct ContentView: View {
             .onAppear {
                 scrollToLatest(using: proxy)
             }
-            .onChange(of: viewModel.selectedMessages) { _, _ in
-                scrollToLatest(using: proxy)
-            }
-            .onChange(of: viewModel.selectedRoomID) { _, _ in
+            .onChange(of: viewModel.messages) { _, _ in
                 scrollToLatest(using: proxy)
             }
         }
@@ -275,7 +201,7 @@ struct ContentView: View {
                     .foregroundStyle(AppTheme.subtleText)
             }
 
-            Text("Pin the best message with the little pin button, export the room when the debate becomes legendary, and let the dark humor behave itself.")
+            Text("Pin the best message with the little pin button, export the debate when it becomes legendary, and let the dark humor behave itself.")
                 .font(.caption)
                 .foregroundStyle(AppTheme.subtleText)
 
@@ -325,17 +251,10 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
-    private var selectedRoomTitleBinding: Binding<String> {
+    private var topicBinding: Binding<String> {
         Binding(
-            get: { viewModel.selectedRoom?.title ?? "" },
-            set: { viewModel.updateSelectedRoomTitle($0) }
-        )
-    }
-
-    private var selectedTopicBinding: Binding<String> {
-        Binding(
-            get: { viewModel.selectedRoom?.topic ?? "" },
-            set: { viewModel.updateSelectedTopic($0) }
+            get: { viewModel.topic },
+            set: { viewModel.updateTopic($0) }
         )
     }
 
@@ -347,7 +266,7 @@ struct ContentView: View {
     }
 
     private func scrollToLatest(using proxy: ScrollViewProxy) {
-        guard let lastID = viewModel.selectedMessages.last?.id else { return }
+        guard let lastID = viewModel.messages.last?.id else { return }
         DispatchQueue.main.async {
             withAnimation(.easeOut(duration: 0.2)) {
                 proxy.scrollTo(lastID, anchor: .bottom)
@@ -375,54 +294,6 @@ private struct CapsuleTag: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(tint.opacity(0.20), in: Capsule())
-    }
-}
-
-private struct RoomCard: View {
-    let room: DebateRoom
-    let isSelected: Bool
-    let subtitle: String
-    let meta: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(room.title)
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if room.pinnedMessage != nil {
-                        Image(systemName: "pin.fill")
-                            .foregroundStyle(AppTheme.gold)
-                    }
-                }
-
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.subtleText)
-                    .lineLimit(2)
-
-                Text(meta)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : AppTheme.subtleText)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(isSelected ? Color.purple.opacity(0.25) : AppTheme.secondaryFill)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(isSelected ? Color.purple.opacity(0.9) : AppTheme.border, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -586,5 +457,5 @@ private struct MessageBubble: View {
 
 #Preview {
     ContentView()
-        .frame(width: 1320, height: 820)
+        .frame(width: 1180, height: 820)
 }
