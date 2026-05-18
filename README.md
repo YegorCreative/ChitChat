@@ -46,15 +46,26 @@ When you are ready, save app images in `docs/images/` and link them here. A good
 ### Build from Terminal
 
 ```bash
-cd '/Users/yegorhambaryan/Documents/2026/iOs developement/ChitChat/MatYegorChitChat'
+cd /path/to/ChitChat
 xcodebuild -project 'MatYegorChitChat.xcodeproj' -scheme 'MatYegorChitChat' -configuration Debug -sdk macosx CODE_SIGNING_ALLOWED=NO build
 ```
 
 ## Git Workflow
 
-- `main` holds the stable baseline
-- `dev` is the working branch for upcoming changes
-- Future features can branch off `dev` when the app starts growing faster
+- `main` stays stable and should reflect code that is safe to show, demo, or ship
+- `dev` is the integration branch for day-to-day progress
+- New work should branch from `dev`, not from `main`
+- Use small focused branches with clear names:
+  - `feature/custom-names`
+  - `feature/local-chat-history`
+  - `fix/message-scroll`
+  - `release/0.1.0`
+- Merge flow should usually look like this:
+  - `feature/*` -> `dev`
+  - `fix/*` -> `dev`
+  - `release/*` -> `main` and back into `dev`
+
+For the full branch workflow and example commands, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Good Next Steps
 
