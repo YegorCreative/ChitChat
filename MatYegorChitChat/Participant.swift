@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum Participant: String, CaseIterable, Identifiable {
+enum Participant: String, CaseIterable, Identifiable, Codable, Hashable {
     case yegor
     case friend
 
@@ -39,6 +39,15 @@ enum Participant: String, CaseIterable, Identifiable {
             return "bolt.fill"
         case .friend:
             return "sparkles"
+        }
+    }
+
+    var opponent: Participant {
+        switch self {
+        case .yegor:
+            return .friend
+        case .friend:
+            return .yegor
         }
     }
 }
