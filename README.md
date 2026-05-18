@@ -8,6 +8,8 @@ Built with SwiftUI, the current version is intentionally small, local-first, and
 
 - One shared local conversation thread for two people
 - Turn-based chatting with a clear active speaker
+- Editable display names for both participants
+- Local conversation history that survives app relaunches
 - Quick prompt chips to kick off funny debates and idea battles
 - A playful tone with dark-ish humor in the UI copy
 - A lightweight anti-politics guardrail for the shared space
@@ -28,6 +30,7 @@ When you are ready, save app images in `docs/images/` and link them here. A good
 - `MatYegorChitChat/Participant.swift` — participant metadata like name, icon, and accent color
 - `MatYegorChitChat/ChatMessage.swift` — shared message model
 - `MatYegorChitChat/DebateViewModel.swift` — app state, prompts, turn switching, and simple content rules
+- `MatYegorChitChat/DebateSessionStore.swift` — local session persistence using `UserDefaults`
 - `MatYegorChitChat/Assets.xcassets` — app icons and accent assets
 
 ## Getting Started
@@ -69,8 +72,6 @@ For the full branch workflow and example commands, see [`CONTRIBUTING.md`](CONTR
 
 ## Good Next Steps
 
-- Save chats locally between launches
-- Let both people choose custom display names
 - Add multiple debate rooms or topics
 - Pin the best idea of the round
 - Export conversations or favorite ideas

@@ -38,13 +38,14 @@ struct ContentView: View {
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
 
-                Text("Two humans. One thread. Infinite overconfident ideas. Humor is welcome, politics gets benched.")
+                Text("Two humans. One thread. Infinite overconfident ideas. Humor is welcome, politics gets benched, and your chat stays saved on this Mac.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.72))
 
                 HStack(spacing: 10) {
                     CapsuleTag(title: "Topic", value: viewModel.topic, tint: .orange)
                     CapsuleTag(title: "Status", value: viewModel.messageCountLabel, tint: .mint)
+                    CapsuleTag(title: "Memory", value: "Local history on", tint: .blue)
                 }
             }
 
@@ -67,7 +68,11 @@ struct ContentView: View {
             ForEach(Participant.allCases) { participant in
                 SpeakerCard(
                     participant: participant,
-                    isActive: participant == viewModel.currentSpeaker
+                    displayName: viewModel.name(for: participant),
+                    isActive: participant == viewModel.currentSpeaker,
+                    onCommitName: { newName in
+                        viewModel.setName(newName, for: participant)
+                    }
                 )
             }
         }
@@ -111,7 +116,10 @@ struct ContentView: View {
             ScrollView {
                 LazyVStack(spacing: 14) {
                     ForEach(viewModel.messages) { message in
-                        MessageBubble(message: message)
+                        MessageBubble(
+                            message: message,
+                            displayName: message.author.map(viewModel.name(for:))
+                        )
                             .id(message.id)
                     }
                 }
@@ -134,7 +142,7 @@ struct ContentView: View {
     private var composerPanel: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Label("Now speaking: \(viewModel.currentSpeaker.displayName)", systemImage: viewModel.currentSpeaker.icon)
+                Label("Now speaking: \(viewModel.name(for: viewModel.currentSpeaker))", systemImage: viewModel.currentSpeaker.icon)
                     .foregroundStyle(viewModel.currentSpeaker.accentColor)
                     .font(.headline)
 
@@ -144,6 +152,10 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.55))
             }
+
+            Text("Tip: rename either side in the speaker cards. Names and debate history save automatically.")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.55))
 
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $viewModel.draft)
@@ -225,7 +237,12 @@ private struct CapsuleTag: View {
 
 private struct SpeakerCard: View {
     let participant: Participant
+    let displayName: String
     let isActive: Bool
+    let onCommitName: (String) -> Void
+
+    @State private var draftName: String = ""
+    @FocusState private var isEditingName: Bool
 
     var body: some View {
         HStack(spacing: 14) {
@@ -234,15 +251,25 @@ private struct SpeakerCard: View {
                     .fill(participant.accentColor.opacity(0.22))
                     .frame(width: 48, height: 48)
 
-                Text(participant.shortLabel)
+                Text(shortLabel)
                     .font(.headline.weight(.bold))
                     .foregroundStyle(.white)
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(participant.displayName)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+                TextField("Name", text: $draftName)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isEditingName)
+                    .onSubmit(commitName)
+                    .onChange(of: isEditingName) { _, editing in
+                        if !editing {
+                            commitName()
+                        }
+                    }
+                    .onChange(of: displayName) { _, newValue in
+                        guard !isEditingName else { return }
+                        draftName = newValue
+                    }
 
                 Text(isActive ? "Has the mic and questionable confidence" : "Waiting to deliver the next masterpiece")
                     .font(.subheadline)
@@ -270,11 +297,24 @@ private struct SpeakerCard: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(isActive ? participant.accentColor.opacity(0.9) : Color.white.opacity(0.08), lineWidth: 1)
         )
+        .onAppear {
+            draftName = displayName
+        }
+    }
+
+    private var shortLabel: String {
+        let trimmed = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return String((trimmed.isEmpty ? displayName : trimmed).prefix(1)).uppercased()
+    }
+
+    private func commitName() {
+        onCommitName(draftName)
     }
 }
 
 private struct MessageBubble: View {
     let message: ChatMessage
+    let displayName: String?
 
     var body: some View {
         if let author = message.author {
@@ -283,7 +323,7 @@ private struct MessageBubble: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Label(author.displayName, systemImage: author.icon)
+                        Label(displayName ?? author.displayName, systemImage: author.icon)
                             .font(.caption.weight(.bold))
                             .foregroundStyle(author.accentColor)
 
