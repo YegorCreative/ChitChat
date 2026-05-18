@@ -1,4 +1,4 @@
-# ChitChat
+d # ChitChat
 
 `ChitChat` is a simple macOS desktop app for two friends to chat, debate, throw around ridiculous ideas, and land on the best one without turning the room into a political talk show.
 
@@ -6,11 +6,14 @@ Built with SwiftUI, the current version is intentionally small, local-first, and
 
 ## Current MVP
 
-- One shared local conversation thread for two people
+- Multiple local debate rooms with separate topics and history
 - Turn-based chatting with a clear active speaker
 - Editable display names for both participants
 - Local conversation history that survives app relaunches
+- One pinned “best idea” per room
+- Export the current room to a plain text transcript
 - Quick prompt chips to kick off funny debates and idea battles
+- A polished desktop-style SwiftUI layout with a sidebar and room workspace
 - A playful tone with dark-ish humor in the UI copy
 - A lightweight anti-politics guardrail for the shared space
 - Simple architecture that is ready for persistence, rooms, and future upgrades
@@ -29,8 +32,11 @@ When you are ready, save app images in `docs/images/` and link them here. A good
 - `MatYegorChitChat/ContentView.swift` — main desktop chat/debate interface
 - `MatYegorChitChat/Participant.swift` — participant metadata like name, icon, and accent color
 - `MatYegorChitChat/ChatMessage.swift` — shared message model
-- `MatYegorChitChat/DebateViewModel.swift` — app state, prompts, turn switching, and simple content rules
-- `MatYegorChitChat/DebateSessionStore.swift` — local session persistence using `UserDefaults`
+- `MatYegorChitChat/DebateRoom.swift` — room model with topic, names, messages, and pinned idea
+- `MatYegorChitChat/DebateViewModel.swift` — workspace state, prompts, room switching, pinning, and content rules
+- `MatYegorChitChat/DebateSessionStore.swift` — local workspace persistence using `UserDefaults`
+- `MatYegorChitChat/ChatExportService.swift` — plain text export for the selected room
+- `MatYegorChitChat/AppTheme.swift` — reusable colors and styling tokens
 - `MatYegorChitChat/Assets.xcassets` — app icons and accent assets
 
 ## Getting Started
@@ -72,7 +78,7 @@ For the full branch workflow and example commands, see [`CONTRIBUTING.md`](CONTR
 
 ## Good Next Steps
 
-- Add multiple debate rooms or topics
-- Pin the best idea of the round
-- Export conversations or favorite ideas
+- Add delete/archive for old rooms
+- Export all rooms in one bundle or markdown file
+- Add richer pinned idea summaries
 - Add real screenshots and a polished app icon

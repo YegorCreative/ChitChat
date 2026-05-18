@@ -1,11 +1,16 @@
 import Foundation
 
-struct DebateSessionSnapshot: Codable {
+private struct LegacyDebateSessionSnapshot: Codable {
     var topic: String
     var currentSpeaker: Participant
     var yegorName: String
     var friendName: String
     var messages: [ChatMessage]
+}
+
+struct DebateWorkspaceSnapshot: Codable {
+    var rooms: [DebateRoom]
+    var selectedRoomID: UUID?
 }
 
 struct DebateSessionStore {
@@ -16,25 +21,41 @@ struct DebateSessionStore {
         self.defaults = defaults
     }
 
-    func load() -> DebateSessionSnapshot? {
+    func loadWorkspace() -> DebateWorkspaceSnapshot? {
         guard let data = defaults.data(forKey: storageKey) else {
             return nil
         }
 
         do {
-            return try JSONDecoder().decode(DebateSessionSnapshot.self, from: data)
+            return try JSONDecoder().decode(DebateWorkspaceSnapshot.self, from: data)
         } catch {
-            defaults.removeObject(forKey: storageKey)
-            return nil
+            do {
+                let legacy = try JSONDecoder().decode(LegacyDebateSessionSnapshot.self, from: data)
+                let now = Date()
+                let room = DebateRoom(
+                    title: "Main Arena",
+                    topic: legacy.topic,
+                    currentSpeaker: legacy.currentSpeaker,
+                    yegorName: legacy.yegorName,
+                    friendName: legacy.friendName,
+                    messages: legacy.messages,
+                    createdAt: now,
+                    updatedAt: now
+                )
+                return DebateWorkspaceSnapshot(rooms: [room], selectedRoomID: room.id)
+            } catch {
+                defaults.removeObject(forKey: storageKey)
+                return nil
+            }
         }
     }
 
-    func save(_ snapshot: DebateSessionSnapshot) {
+    func saveWorkspace(_ snapshot: DebateWorkspaceSnapshot) {
         do {
             let data = try JSONEncoder().encode(snapshot)
             defaults.set(data, forKey: storageKey)
         } catch {
-            assertionFailure("Failed to save debate session: \(error)")
+            assertionFailure("Failed to save debate workspace: \(error)")
         }
     }
 }

@@ -41,4 +41,13 @@ enum Participant: String, CaseIterable, Identifiable, Codable, Hashable {
             return "sparkles"
         }
     }
+
+    var opponent: Participant {
+        switch self {
+        case .yegor:
+            return .friend
+        case .friend:
+            return .yegor
+        }
+    }
 }
