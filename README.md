@@ -1,26 +1,77 @@
-# MatYegorChitChat
+# ChitChat
 
-A tiny macOS SwiftUI debate app for two friends.
+`ChitChat` is a simple macOS desktop app for two friends to chat, debate, throw around ridiculous ideas, and land on the best one without turning the room into a political talk show.
 
-## What it does
-- Lets two people share one local conversation thread
-- Alternates the active speaker, with a manual `Pass Mic` option
-- Starts with playful, non-political prompts
-- Blocks obvious political keywords to keep the chat focused on ideas and banter
-- Keeps the UI simple so persistence, networking, or AI features can be added later
+Built with SwiftUI, the current version is intentionally small, local-first, and easy to grow later.
 
-## Main files
-- `MatYegorChitChat/MatYegorChitChatApp.swift` — app entry and desktop window sizing
-- `MatYegorChitChat/ContentView.swift` — main chat/debate UI
-- `MatYegorChitChat/Participant.swift` — the two chat participants
-- `MatYegorChitChat/ChatMessage.swift` — message model
-- `MatYegorChitChat/DebateViewModel.swift` — app state and rules
+## Current MVP
 
-## Run
-Open `MatYegorChitChat.xcodeproj` in Xcode and run the `MatYegorChitChat` scheme on macOS.
+- One shared local conversation thread for two people
+- Turn-based chatting with a clear active speaker
+- Quick prompt chips to kick off funny debates and idea battles
+- A playful tone with dark-ish humor in the UI copy
+- A lightweight anti-politics guardrail for the shared space
+- Simple architecture that is ready for persistence, rooms, and future upgrades
 
-## Next good upgrades
-- Save chat history locally
-- Rename the second participant from `Friend`
+## Screenshots
+
+Screenshots are coming soon.
+
+When you are ready, save app images in `docs/images/` and link them here. A good first screenshot name would be:
+
+- `docs/images/chitchat-main-window.png`
+
+## Project Structure
+
+- `MatYegorChitChat/MatYegorChitChatApp.swift` — app entry point and macOS window sizing
+- `MatYegorChitChat/ContentView.swift` — main desktop chat/debate interface
+- `MatYegorChitChat/Participant.swift` — participant metadata like name, icon, and accent color
+- `MatYegorChitChat/ChatMessage.swift` — shared message model
+- `MatYegorChitChat/DebateViewModel.swift` — app state, prompts, turn switching, and simple content rules
+- `MatYegorChitChat/Assets.xcassets` — app icons and accent assets
+
+## Getting Started
+
+### Requirements
+
+- macOS
+- Xcode with SwiftUI support
+
+### Run in Xcode
+
+1. Open `MatYegorChitChat.xcodeproj`
+2. Select the `MatYegorChitChat` scheme
+3. Run the macOS app
+
+### Build from Terminal
+
+```bash
+cd /path/to/ChitChat
+xcodebuild -project 'MatYegorChitChat.xcodeproj' -scheme 'MatYegorChitChat' -configuration Debug -sdk macosx CODE_SIGNING_ALLOWED=NO build
+```
+
+## Git Workflow
+
+- `main` stays stable and should reflect code that is safe to show, demo, or ship
+- `dev` is the integration branch for day-to-day progress
+- New work should branch from `dev`, not from `main`
+- Use small focused branches with clear names:
+  - `feature/custom-names`
+  - `feature/local-chat-history`
+  - `fix/message-scroll`
+  - `release/0.1.0`
+- Merge flow should usually look like this:
+  - `feature/*` -> `dev`
+  - `fix/*` -> `dev`
+  - `release/*` -> `main` and back into `dev`
+
+For the full branch workflow and example commands, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Good Next Steps
+
+- Save chats locally between launches
+- Let both people choose custom display names
 - Add multiple debate rooms or topics
-- Export the best ideas into notes
+- Pin the best idea of the round
+- Export conversations or favorite ideas
+- Add real screenshots and a polished app icon
